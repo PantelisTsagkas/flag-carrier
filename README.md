@@ -36,6 +36,10 @@ uv run pytest
 - Training flights (practice mode) use random flags and are never logged.
 - One name = one player. Pick a name and keep it, the all-time board sums your daily scores into frequent flyer miles.
 
+## Build notes
+
+Why and how it was built, plus lessons learned: open [docs/lessons.html](docs/lessons.html) in a browser.
+
 ## Credits
 
 Flag SVGs vendored from [flag-icons](https://github.com/lipis/flag-icons) (MIT), see `static/flags/LICENSE`.
