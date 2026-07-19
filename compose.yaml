@@ -1,0 +1,9 @@
+services:
+  flag-carrier:
+    build: .
+    container_name: flag-carrier
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped

@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FLAG CARRIER</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230a0a0a'/%3E%3Ctext x='16' y='22' font-family='monospace' font-size='13' fill='%23ffb000' text-anchor='middle'%3EFC%3C/text%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --panel: #101010;
+    --tile: #141414;
+    --line: #2a2a2a;
+    --amber: #ffb000;
+    --amber-dim: #8a6200;
+    --txt: #e6e6e6;
+    --dim: #8a8a8a;
+    --green: #2ee06f;
+    --red: #ff5449;
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--txt);
+    font-family: var(--mono);
+    letter-spacing: 0.04em;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 1.2rem 1rem 3rem; }
+
+  header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    gap: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--line);
+    margin-bottom: 1.4rem;
+  }
+  .tiles { display: flex; flex-wrap: wrap; gap: 3px; }
+  .tiles span {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 1.25em; padding: 0.3em 0.12em;
+    background: var(--tile); border: 1px solid var(--line);
+    color: var(--amber); font-weight: 700;
+    font-size: clamp(1.15rem, 4.6vw, 1.9rem);
+  }
+  .tiles span.gap { background: none; border: none; min-width: 0.5em; }
+  .tagline { color: var(--dim); font-size: 0.72rem; margin-top: 0.55rem; }
+  .hud { text-align: right; font-size: 0.72rem; color: var(--dim); white-space: nowrap; }
+  .hud button {
+    background: none; border: 1px solid var(--line); color: var(--dim);
+    font-family: inherit; font-size: 0.72rem; letter-spacing: 0.06em;
+    padding: 0.3rem 0.5rem; cursor: pointer; margin-top: 0.4rem;
+  }
+  .hud button:hover { border-color: var(--amber); color: var(--amber); }
+
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  .label { color: var(--amber); font-size: 0.72rem; margin-bottom: 0.5rem; }
+  .dim { color: var(--dim); }
+  .green { color: var(--green); }
+  .red { color: var(--red); }
+  .amber { color: var(--amber); }
+
+  input[type=text] {
+    width: 100%; background: var(--panel); border: 1px solid var(--line);
+    color: var(--txt); font-family: inherit; font-size: 1.05rem;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 0.85rem 1rem; outline: none;
+  }
+  input[type=text]:focus { border-color: var(--amber); }
+
+  .btn {
+    display: block; width: 100%; text-align: center;
+    font-family: inherit; font-size: 1rem; letter-spacing: 0.1em;
+    padding: 0.95rem 1rem; margin-top: 0.7rem; cursor: pointer;
+    background: none; border: 1px solid var(--line); color: var(--txt);
+  }
+  .btn:hover { border-color: var(--amber); color: var(--amber); }
+  .btn.primary { background: var(--amber); border-color: var(--amber); color: #000; font-weight: 700; }
+  .btn.primary:hover { background: #ffc133; color: #000; }
+  .btn:disabled { opacity: 0.45; cursor: default; }
+
+  .note { font-size: 0.72rem; color: var(--dim); margin-top: 1.2rem; line-height: 1.7; }
+  .homeline { margin-top: 1rem; font-size: 0.8rem; }
+
+  /* game */
+  .gametop {
+    display: flex; justify-content: space-between; gap: 0.6rem;
+    font-size: 0.78rem; color: var(--dim); margin-bottom: 0.9rem;
+  }
+  .gametop .pts { color: var(--amber); }
+  .flagbox {
+    background: var(--panel); border: 1px solid var(--line);
+    padding: 1.1rem; text-align: center;
+  }
+  .flagbox img {
+    display: block; width: 100%; max-width: 400px; margin: 0.6rem auto 0;
+    border: 1px solid #3a3a3a; background: #000;
+  }
+  .timer { margin: 0.9rem 0 1rem; }
+  .timerbar { height: 6px; background: #1c1c1c; border: 1px solid var(--line); }
+  .timerbar div { height: 100%; background: var(--amber); width: 100%; }
+  .timer.low .timerbar div { background: var(--red); }
+  .timertxt { text-align: right; font-size: 0.72rem; color: var(--dim); margin-top: 0.3rem; }
+  .timer.low .timertxt { color: var(--red); }
+
+  .opts { display: grid; gap: 0.5rem; }
+  .opt {
+    display: grid; grid-template-columns: 2.4rem 1fr; align-items: center;
+    text-align: left; font-family: inherit; font-size: 1rem;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    background: var(--panel); border: 1px solid var(--line); color: var(--txt);
+    padding: 0.85rem 0.9rem; cursor: pointer;
+  }
+  .opt .key { color: var(--dim); font-size: 0.78rem; }
+  .opt:not(:disabled):hover { border-color: var(--amber); color: var(--amber); }
+  .opt:not(:disabled):hover .key { color: var(--amber); }
+  .opt:disabled { cursor: default; opacity: 0.5; }
+  .opt.correct { border-color: var(--green); color: var(--green); opacity: 1; }
+  .opt.correct .key { color: var(--green); }
+  .opt.wrong { border-color: var(--red); color: var(--red); opacity: 1; }
+  .opt.wrong .key { color: var(--red); }
+
+  .reveal { min-height: 3.4rem; margin-top: 1rem; text-align: center; visibility: hidden; }
+  .reveal.show { visibility: visible; }
+  .reveal .l1 { font-size: 1.05rem; font-weight: 700; letter-spacing: 0.12em; }
+  .reveal .l2 { font-size: 0.78rem; color: var(--dim); margin-top: 0.35rem; }
+
+  /* arrivals */
+  .pass {
+    background: var(--panel); border: 1px solid var(--line);
+    padding: 1.3rem; margin-top: 0.4rem;
+  }
+  .pass .row { display: flex; justify-content: space-between; gap: 1rem; font-size: 0.78rem; margin-bottom: 0.55rem; }
+  .pass .row b { color: var(--txt); font-weight: 400; }
+  .scoretiles { display: flex; gap: 4px; justify-content: center; margin: 1.1rem 0 0.9rem; }
+  .scoretiles span {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 1.3em; padding: 0.35em 0.1em;
+    background: var(--tile); border: 1px solid var(--line);
+    color: var(--amber); font-weight: 700; font-size: 2.1rem;
+  }
+  .recap { display: flex; gap: 5px; justify-content: center; margin-bottom: 1rem; }
+  .recap i { width: 13px; height: 13px; display: inline-block; }
+  .recap i.ok { background: var(--green); }
+  .recap i.no { background: var(--red); }
+  .remark { text-align: center; font-size: 0.85rem; letter-spacing: 0.12em; }
+  .logline { text-align: center; font-size: 0.78rem; margin-top: 0.8rem; min-height: 1.2em; }
+
+  /* board */
+  .tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+  .tab {
+    flex: 1; font-family: inherit; font-size: 0.8rem; letter-spacing: 0.1em;
+    padding: 0.6rem; background: none; border: 1px solid var(--line);
+    color: var(--dim); cursor: pointer;
+  }
+  .tab.on { border-color: var(--amber); color: var(--amber); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th { color: var(--amber); font-size: 0.68rem; text-align: left; font-weight: 400; padding: 0.45rem 0.5rem; border-bottom: 1px solid var(--line); }
+  td { padding: 0.55rem 0.5rem; border-bottom: 1px solid #1c1c1c; }
+  th.r, td.r { text-align: right; }
+  tr.me td { color: var(--amber); }
+  .empty { text-align: center; color: var(--dim); font-size: 0.8rem; padding: 2rem 0; }
+  .boardfoot { font-size: 0.68rem; color: var(--dim); text-align: center; margin-top: 1rem; }
+
+  @media (max-width: 560px) {
+    .opt { font-size: 0.88rem; }
+    .hud { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <div class="tiles" id="brand"></div>
+      <div class="tagline">EUROPEAN DEPARTURES · STAND-UP EDITION</div>
+    </div>
+    <div class="hud">
+      <div id="hud-date"></div>
+      <button id="snd-btn"></button>
+    </div>
+  </header>
+
+  <section class="screen active" id="screen-home">
+    <div class="label">PASSENGER NAME</div>
+    <input type="text" id="name" maxlength="24" placeholder="E.G. PANTELIS" autocomplete="off">
+    <button class="btn primary" id="btn-daily">DEPART · TODAY'S RUN</button>
+    <button class="btn" id="btn-practice">TRAINING FLIGHT</button>
+    <button class="btn" id="btn-board">DEPARTURES BOARD</button>
+    <div class="homeline red" id="home-err"></div>
+    <div class="homeline amber" id="home-played"></div>
+    <div class="note">
+      10 LEGS · 10 SECONDS EACH · SAME FLAGS FOR EVERYONE, SEEDED DAILY<br>
+      FIRST ATTEMPT COUNTS · TRAINING FLIGHTS ARE NEVER LOGGED
+    </div>
+  </section>
+
+  <section class="screen" id="screen-game">
+    <div class="gametop">
+      <div><span id="g-leg"></span> <span id="g-gate"></span></div>
+      <div><span id="g-streak" class="dim"></span> <span class="pts" id="g-pts">PTS 0000</span></div>
+    </div>
+    <div class="flagbox">
+      <div class="label">DESTINATION</div>
+      <img id="g-flag" alt="flag">
+    </div>
+    <div class="timer" id="g-timer">
+      <div class="timerbar"><div id="g-bar"></div></div>
+      <div class="timertxt" id="g-sec"></div>
+    </div>
+    <div class="opts" id="g-opts"></div>
+    <div class="reveal" id="g-reveal">
+      <div class="l1" id="g-r1"></div>
+      <div class="l2" id="g-r2"></div>
+    </div>
+  </section>
+
+  <section class="screen" id="screen-arrivals">
+    <div class="label">ARRIVALS</div>
+    <div class="pass">
+      <div class="row"><span class="dim">FLAG CARRIER · BOARDING PASS</span><span class="dim" id="p-flight"></span></div>
+      <div class="row"><span class="dim">PASSENGER</span><b id="p-name"></b></div>
+      <div class="row"><span class="dim">SEAT</span><b id="p-seat">--</b></div>
+      <div class="scoretiles" id="p-score"></div>
+      <div class="recap" id="p-recap"></div>
+      <div class="remark" id="p-remark"></div>
+      <div class="logline" id="p-log"></div>
+    </div>
+    <div id="p-btns"></div>
+  </section>
+
+  <section class="screen" id="screen-board">
+    <div class="tabs">
+      <button class="tab on" id="tab-today">TODAY</button>
+      <button class="tab" id="tab-alltime">FREQUENT FLYERS</button>
+    </div>
+    <div id="board-body"></div>
+    <div class="boardfoot" id="board-foot"></div>
+    <button class="btn" id="btn-board-home">HOME</button>
+  </section>
+
+</div>
+<script>
+"use strict";
+
+const $ = s => document.querySelector(s);
+const screens = ["home", "game", "arrivals", "board"];
+
+const QUIPS = {
+  "mc-pl": "THE MONACO-POLAND TRAP. EVERY TIME.",
+  "lu-nl": "LUXEMBOURG'S BLUE IS LIGHTER. NOTORIOUS.",
+  "si-sk": "SLOVAKIA-SLOVENIA. THEIR EMBASSIES MIX IT UP TOO.",
+  "rs-ru": "SAME COLOURS, DIFFERENT ORDER. BRUTAL.",
+  "ie-it": "ONE OF THEM HAS ORANGE. IT WAS THE OTHER ONE.",
+  "hr-nl": "CHECK FOR THE CHEQUERBOARD NEXT TIME.",
+};
+
+const S = {
+  mode: null, data: null, i: 0, score: 0, streak: 0,
+  results: [], deadline: 0, raf: null, locked: true,
+  lastTick: null, boardTimer: null, boardTab: "today",
+};
+
+/* ---------- sound ---------- */
+let actx = null;
+let sndOn = localStorage.getItem("fc_snd") !== "0";
+function beep(f, d, type = "square", t = 0, g = 0.05) {
+  if (!sndOn) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = actx.createOscillator(), v = actx.createGain();
+    o.type = type; o.frequency.value = f;
+    o.connect(v); v.connect(actx.destination);
+    const now = actx.currentTime + t;
+    v.gain.setValueAtTime(g, now);
+    v.gain.exponentialRampToValueAtTime(0.0001, now + d);
+    o.start(now); o.stop(now + d + 0.02);
+  } catch (e) { /* no audio, no problem */ }
+}
+const sndCorrect = () => { beep(880, 0.09); beep(1318.5, 0.12, "square", 0.09); };
+const sndWrong = () => beep(160, 0.25, "sawtooth");
+const sndTick = () => beep(440, 0.03, "square", 0, 0.03);
+const sndDone = () => { beep(659, 0.1); beep(880, 0.1, "square", 0.12); beep(1318.5, 0.2, "square", 0.24); };
+function renderSnd() { $("#snd-btn").textContent = sndOn ? "SND:ON" : "SND:OFF"; }
+
+/* ---------- helpers ---------- */
+function show(name) {
+  screens.forEach(s => $("#screen-" + s).classList.toggle("active", s === name));
+  if (name !== "board" && S.boardTimer) { clearInterval(S.boardTimer); S.boardTimer = null; }
+  if (name === "home") renderHome();
+}
+const pad = (n, w) => String(n).padStart(w, "0");
+const fmtPts = n => "PTS " + pad(n, 4);
+function clientToday() {
+  const d = new Date();
+  return d.getFullYear() + "-" + pad(d.getMonth() + 1, 2) + "-" + pad(d.getDate(), 2);
+}
+function myName() { return (localStorage.getItem("fc_name") || "").trim(); }
+
+/* ---------- header ---------- */
+function renderBrand() {
+  const el = $("#brand");
+  el.innerHTML = "";
+  for (const ch of "FLAG CARRIER") {
+    const s = document.createElement("span");
+    if (ch === " ") { s.className = "gap"; } else { s.textContent = ch; }
+    el.appendChild(s);
+  }
+}
+function renderDate() {
+  const d = new Date();
+  const days = ["SUN","MON","TUE","WED","THU","FRI","SAT"];
+  const mon = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+  $("#hud-date").textContent = days[d.getDay()] + " " + pad(d.getDate(), 2) + " " + mon[d.getMonth()];
+}
+
+/* ---------- home ---------- */
+function renderHome() {
+  $("#home-err").textContent = "";
+  const played = localStorage.getItem("fc_played_" + clientToday());
+  $("#home-played").textContent = played
+    ? "TODAY'S RUN LOGGED · " + played + " PTS · REPLAYS ARE NOT SCORED"
+    : "";
+}
+
+async function startRun(mode) {
+  if (mode === "daily" && !myName()) {
+    $("#home-err").textContent = "ENTER A PASSENGER NAME FIRST";
+    $("#name").focus();
+    return;
+  }
+  $("#home-err").textContent = "";
+  $("#btn-daily").disabled = $("#btn-practice").disabled = true;
+  try {
+    const res = await fetch(mode === "daily" ? "/api/daily" : "/api/practice");
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    S.mode = mode; S.data = data; S.i = 0; S.score = 0; S.streak = 0;
+    S.results = []; S.submitted = false;
+    show("game");
+    renderRound();
+  } catch (e) {
+    $("#home-err").textContent = "SYSTEM FAULT · IS THE SERVER UP?";
+  } finally {
+    $("#btn-daily").disabled = $("#btn-practice").disabled = false;
+  }
+}
+
+/* ---------- game ---------- */
+function renderRound() {
+  const r = S.data.rounds[S.i];
+  const rs = S.data.round_seconds;
+  $("#g-leg").textContent = "LEG " + pad(S.i + 1, 2) + "/" + pad(S.data.rounds.length, 2);
+  $("#g-gate").textContent = "· GATE " + "ABCDEF"[Math.floor(Math.random() * 6)] + (1 + Math.floor(Math.random() * 24));
+  $("#g-streak").textContent = S.streak >= 2 ? "STREAK x" + S.streak + " ·" : "";
+  $("#g-pts").textContent = fmtPts(S.score);
+  $("#g-flag").src = "/flags/" + r.answer + ".svg";
+  $("#g-reveal").classList.remove("show");
+  $("#g-timer").classList.remove("low");
+
+  const opts = $("#g-opts");
+  opts.innerHTML = "";
+  r.options.forEach((o, idx) => {
+    const b = document.createElement("button");
+    b.className = "opt";
+    b.dataset.code = o.code;
+    b.innerHTML = "<span class='key'>[" + (idx + 1) + "]</span><span>" + o.name + "</span>";
+    b.onclick = () => resolveRound(o.code);
+    opts.appendChild(b);
+  });
+
+  S.locked = false;
+  S.lastTick = null;
+  S.deadline = performance.now() + rs * 1000;
+  cancelAnimationFrame(S.raf);
+  tick();
+}
+
+function tick() {
+  if (S.locked) return;
+  const rs = S.data.round_seconds * 1000;
+  const remain = Math.max(0, S.deadline - performance.now());
+  $("#g-bar").style.width = (100 * remain / rs) + "%";
+  $("#g-sec").textContent = (remain / 1000).toFixed(1) + "S";
+  if (remain <= 3000) {
+    $("#g-timer").classList.add("low");
+    const sec = Math.ceil(remain / 1000);
+    if (sec !== S.lastTick) { S.lastTick = sec; sndTick(); }
+  }
+  if (remain <= 0) { resolveRound(null); return; }
+  S.raf = requestAnimationFrame(tick);
+}
+
+function resolveRound(code) {
+  if (S.locked) return;
+  S.locked = true;
+  cancelAnimationFrame(S.raf);
+  const rs = S.data.round_seconds * 1000;
+  const remain = Math.max(0, S.deadline - performance.now());
+  const r = S.data.rounds[S.i];
+  const ok = code === r.answer;
+  const pts = ok ? 100 + Math.round(100 * remain / rs) : 0;
+
+  S.score += pts;
+  S.streak = ok ? S.streak + 1 : 0;
+  S.results.push(ok);
+  $("#g-pts").textContent = fmtPts(S.score);
+
+  document.querySelectorAll("#g-opts .opt").forEach(b => {
+    b.disabled = true;
+    if (b.dataset.code === r.answer) b.classList.add("correct");
+    else if (code && b.dataset.code === code) b.classList.add("wrong");
+  });
+
+  const r1 = $("#g-r1"), r2 = $("#g-r2");
+  if (ok) {
+    r1.textContent = "ON TIME";
+    r1.className = "l1 green";
+    r2.textContent = "+" + pts + " PTS" + (S.streak >= 2 ? " · STREAK x" + S.streak : "");
+    sndCorrect();
+  } else if (code === null) {
+    r1.textContent = "MISSED CONNECTION";
+    r1.className = "l1 red";
+    r2.textContent = "IT WAS " + r.name.toUpperCase();
+    sndWrong();
+  } else {
+    const key = [code, r.answer].sort().join("-");
+    r1.textContent = QUIPS[key] || (r.answer === "gb" ? "HAND IN YOUR PASSPORT." : "DIVERTED");
+    r1.className = "l1 red";
+    r2.textContent = "IT WAS " + r.name.toUpperCase();
+    sndWrong();
+  }
+  $("#g-reveal").classList.add("show");
+
+  setTimeout(() => {
+    S.i += 1;
+    if (S.i < S.data.rounds.length) renderRound();
+    else finishRun();
+  }, 1650);
+}
+
+/* ---------- arrivals ---------- */
+function remarkFor(score) {
+  if (score >= 1800) return "CAPTAIN MATERIAL";
+  if (score >= 1400) return "SMOOTH FLIGHT";
+  if (score >= 1000) return "SOME TURBULENCE";
+  if (score >= 600) return "HEAVY TURBULENCE";
+  return "CANCELLED BY OPS";
+}
+
+function finishRun() {
+  sndDone();
+  show("arrivals");
+  const daily = S.mode === "daily";
+  const d = S.data.date;
+  $("#p-flight").textContent = daily ? "FLIGHT FC-" + d.slice(5).replace("-", "") : "TRAINING";
+  $("#p-name").textContent = daily ? myName() : "TRAINEE";
+  $("#p-seat").textContent = "--";
+  $("#p-remark").textContent = remarkFor(S.score);
+
+  const st = $("#p-score");
+  st.innerHTML = "";
+  for (const ch of pad(S.score, 4)) {
+    const s = document.createElement("span");
+    s.textContent = ch;
+    st.appendChild(s);
+  }
+  const rc = $("#p-recap");
+  rc.innerHTML = "";
+  S.results.forEach(ok => {
+    const i = document.createElement("i");
+    i.className = ok ? "ok" : "no";
+    rc.appendChild(i);
+  });
+
+  const btns = $("#p-btns");
+  btns.innerHTML = "";
+  const mk = (txt, cls, fn) => {
+    const b = document.createElement("button");
+    b.className = "btn " + cls; b.textContent = txt; b.onclick = fn;
+    btns.appendChild(b);
+    return b;
+  };
+  if (daily) {
+    mk("DEPARTURES BOARD", "primary", () => openBoard("today"));
+    mk("HOME", "", () => show("home"));
+    submitScore();
+  } else {
+    $("#p-log").textContent = "TRAINING FLIGHT · NOT LOGGED";
+    $("#p-log").className = "logline dim";
+    mk("GO AGAIN", "primary", () => startRun("practice"));
+    mk("HOME", "", () => show("home"));
+  }
+}
+
+async function submitScore() {
+  const log = $("#p-log");
+  log.className = "logline dim";
+  log.textContent = "TRANSMITTING...";
+  try {
+    const res = await fetch("/api/scores", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: myName(), score: S.score, date: S.data.date }),
+    });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const out = await res.json();
+    localStorage.setItem("fc_played_" + out.date, out.standing_score);
+    $("#p-seat").textContent = out.position + "ABCDEF"[(out.position - 1) % 6];
+    if (out.logged) {
+      log.className = "logline green";
+      log.textContent = "LOGGED · POSITION #" + out.position;
+    } else {
+      log.className = "logline amber";
+      log.textContent = "FIRST FLIGHT STANDS · " + out.standing_score + " PTS · THIS RUN NOT LOGGED";
+    }
+  } catch (e) {
+    log.className = "logline red";
+    log.innerHTML = "TRANSMISSION FAILED · ";
+    const retry = document.createElement("a");
+    retry.textContent = "[RETRY]";
+    retry.className = "amber";
+    retry.style.cursor = "pointer";
+    retry.onclick = submitScore;
+    log.appendChild(retry);
+  }
+}
+
+/* ---------- board ---------- */
+function todayRemark(pos, n) {
+  if (pos === 1) return ["ON TIME", "green"];
+  if (pos <= 3) return ["BOARDING", "amber"];
+  if (pos === n && n >= 4) return ["LOST LUGGAGE", "red"];
+  return ["DELAYED", "dim"];
+}
+function tierRemark(pos, n) {
+  if (pos === 1) return ["GOLD TIER", "amber"];
+  if (pos <= 3) return ["SILVER TIER", "dim"];
+  if (pos === n && n >= 5) return ["STANDBY", "red"];
+  return ["ECONOMY", "dim"];
+}
+
+async function loadBoard() {
+  const body = $("#board-body");
+  const mine = myName().toLowerCase();
+  try {
+    if (S.boardTab === "today") {
+      const res = await fetch("/api/leaderboard");
+      const data = await res.json();
+      if (!data.entries.length) {
+        body.innerHTML = "<div class='empty'>NO DEPARTURES YET · BE FIRST OFF THE STAND</div>";
+      } else {
+        const rows = data.entries.map(e => {
+          const [txt, cls] = todayRemark(e.pos, data.entries.length);
+          const me = e.name.toLowerCase() === mine ? " class='me'" : "";
+          return "<tr" + me + "><td>" + pad(e.pos, 2) + "</td><td>" + esc(e.name.toUpperCase()) +
+            "</td><td>" + e.time + "</td><td class='r'>" + e.score +
+            "</td><td class='r " + cls + "'>" + txt + "</td></tr>";
+        }).join("");
+        body.innerHTML = "<table><tr><th>POS</th><th>PASSENGER</th><th>DEP</th><th class='r'>PTS</th><th class='r'>REMARKS</th></tr>" + rows + "</table>";
+      }
+      $("#board-foot").textContent = data.date + " · AUTO-REFRESH 10S · SHARE THIS SCREEN AT STAND-UP";
+    } else {
+      const res = await fetch("/api/alltime");
+      const data = await res.json();
+      if (!data.entries.length) {
+        body.innerHTML = "<div class='empty'>NO MILES BANKED YET</div>";
+      } else {
+        const rows = data.entries.map(e => {
+          const [txt, cls] = tierRemark(e.pos, data.entries.length);
+          const me = e.name.toLowerCase() === mine ? " class='me'" : "";
+          return "<tr" + me + "><td>" + pad(e.pos, 2) + "</td><td>" + esc(e.name.toUpperCase()) +
+            "</td><td class='r'>" + e.days + "</td><td class='r'>" + e.total +
+            "</td><td class='r " + cls + "'>" + txt + "</td></tr>";
+        }).join("");
+        body.innerHTML = "<table><tr><th>POS</th><th>PASSENGER</th><th class='r'>FLIGHTS</th><th class='r'>MILES</th><th class='r'>TIER</th></tr>" + rows + "</table>";
+      }
+      $("#board-foot").textContent = "MILES = LIFETIME POINTS · AUTO-REFRESH 10S";
+    }
+  } catch (e) {
+    body.innerHTML = "<div class='empty red'>BOARD OFFLINE · IS THE SERVER UP?</div>";
+  }
+}
+
+function esc(s) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function openBoard(tab) {
+  S.boardTab = tab;
+  $("#tab-today").classList.toggle("on", tab === "today");
+  $("#tab-alltime").classList.toggle("on", tab === "alltime");
+  show("board");
+  loadBoard();
+  if (S.boardTimer) clearInterval(S.boardTimer);
+  S.boardTimer = setInterval(loadBoard, 10000);
+}
+
+/* ---------- wiring ---------- */
+renderBrand();
+renderDate();
+renderSnd();
+renderHome();
+
+const nameEl = $("#name");
+nameEl.value = myName();
+nameEl.addEventListener("input", () => {
+  localStorage.setItem("fc_name", nameEl.value.toUpperCase());
+});
+
+$("#btn-daily").onclick = () => startRun("daily");
+$("#btn-practice").onclick = () => startRun("practice");
+$("#btn-board").onclick = () => openBoard("today");
+$("#btn-board-home").onclick = () => show("home");
+$("#tab-today").onclick = () => openBoard("today");
+$("#tab-alltime").onclick = () => openBoard("alltime");
+$("#snd-btn").onclick = () => {
+  sndOn = !sndOn;
+  localStorage.setItem("fc_snd", sndOn ? "1" : "0");
+  renderSnd();
+};
+
+document.addEventListener("keydown", ev => {
+  if (!$("#screen-game").classList.contains("active") || S.locked) return;
+  const keys = { "1": 0, "2": 1, "3": 2, "4": 3, "a": 0, "b": 1, "c": 2, "d": 3 };
+  const idx = keys[ev.key.toLowerCase()];
+  if (idx === undefined) return;
+  const btn = document.querySelectorAll("#g-opts .opt")[idx];
+  if (btn) btn.click();
+});
+</script>
+</body>
+</html>
